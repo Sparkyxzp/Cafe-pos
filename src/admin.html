@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+        
+        /* Modal Animation */
+        @keyframes popIn { 
+            0% { transform: scale(0.95); opacity: 0; } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
+        .modal-box { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        .loader-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid #f97316; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-6">
+    <div id="app" class="max-w-7xl mx-auto space-y-6">
+        
+        <div v-if="isLoggingOut" class="loader-overlay">
+            <div class="loader"></div>
+            <div class="mt-4 font-bold text-orange-600 text-lg">กำลังออกจากระบบ...</div>
+        </div>
+
+        <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm modal-box text-center">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <span class="text-3xl">⚠️</span>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-800 mb-2">ยืนยันการลบ?</h3>
+                <p class="text-gray-600 text-sm mb-1">{{ deleteMessage }}</p>
+                <p class="text-red-500 text-xs font-bold mb-6">(การกระทำนี้ไม่สามารถย้อนกลับได้)</p>
+                
+                <div class="flex justify-center gap-3">
+                    <button @click="showDeleteModal = false" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">
+                        ยกเลิก
+                    </button>
+                    <button @click="processDelete" class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition transform active:scale-95">
+                        ยืนยันลบ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-center bg-white p-5 rounded-2xl shadow-sm gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-800 flex items-center gap-2">☕ Admin Dashboard</h1>
+                <p class="text-xs text-gray-400 mt-1">จัดการร้านกาแฟของคุณได้ที่นี่</p>
+            </div>
+            <button @click="logout" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow transition hover:shadow-lg flex items-center gap-2">
+                <span>🚪</span> ออกจากระบบ
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+                <div class="relative z-10">
+                    <div class="text-blue-100 mb-1 text-sm font-medium">รายรับวันนี้ ({{ formatDate(todayDate) }})</div>
+                    <div class="text-5xl font-bold mb-3">{{ (Number(todayTotal) || 0).toLocaleString() }}.-</div>
+                    <div class="inline-flex items-center gap-1 text-xs bg-white/20 px-3 py-1 rounded-full">
+                        <span>🛒</span> {{ todayOrdersCount }} ออเดอร์
+                    </div>
+                </div>
+                <div class="absolute -right-4 -bottom-4 text-9xl opacity-10 group-hover:scale-110 transition duration-500">💰</div>
+            </div>
+
+            <div class="md:col-span-2 bg-white rounded-2xl shadow p-6 border border-gray-100 h-48 overflow-hidden flex flex-col">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">📅 สรุปยอดขาย 7 วันล่าสุด</h3>
+                <div class="overflow-y-auto flex-1 pr-2">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-500 sticky top-0">
+                            <tr><th class="text-left py-2 px-3 rounded-l-lg">วันที่</th><th class="text-right py-2 px-3 rounded-r-lg">ยอดขายรวม</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="day in dailySales" :key="day.sale_date" class="border-b last:border-0 hover:bg-gray-50 transition">
+                                <td class="py-3 px-3 text-gray-600">{{ formatDate(day.sale_date) }}</td>
+                                <td class="py-3 px-3 text-right font-bold text-gray-800">{{ (Number(day.total) || 0).toLocaleString() }}.-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-6">
+            <div class="col-span-12 lg:col-span-7 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                    <h2 class="text-xl font-bold mb-5 text-orange-600 flex items-center gap-2"><span>🍔</span> จัดการเมนู</h2>
+                    
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">หมวดหมู่สินค้า</label>
+                        <div class="flex gap-2 mb-3">
+                            <input v-model="newCatName" placeholder="ชื่อหมวดหมู่ใหม่..." class="flex-1 text-sm p-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-200">
+                            <button @click="addCategory" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg text-sm font-bold shadow transition">เพิ่ม</button>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div v-for="c in categories" :key="c.id" class="bg-white px-3 py-1.5 rounded-lg border text-sm text-gray-700 shadow-sm flex items-center gap-2">
+                                {{ c.name }}
+                                <button @click="openDeleteModal('category', c.id, `ลบหมวดหมู่ '${c.name}'? (สินค้าในหมวดจะหายไปด้วย)`)" class="text-gray-400 hover:text-red-500 w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-50 transition">×</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-orange-50 p-5 rounded-xl border border-orange-200 mb-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-orange-200 text-orange-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg">NEW ITEM</div>
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div><label class="text-xs font-bold text-gray-500 ml-1">ชื่อเมนู</label><input v-model="newP.name" class="w-full p-2.5 border rounded-lg text-sm focus:outline-none focus:border-orange-500"></div>
+                            <div><label class="text-xs font-bold text-gray-500 ml-1">ราคา (บาท)</label><input v-model.number="newP.price" type="number" class="w-full p-2.5 border rounded-lg text-sm focus:outline-none focus:border-orange-500"></div>
+                        </div>
+                        <div class="flex items-center gap-2 mb-4 bg-white/50 p-2 rounded-lg border border-orange-100">
+                            <input type="checkbox" id="sweet" v-model="newP.has_sweetness" class="w-4 h-4 text-orange-600 rounded">
+                            <label for="sweet" class="text-sm text-gray-700 cursor-pointer">เมนูนี้ปรับความหวานได้</label>
+                        </div>
+                        <div class="mb-4">
+                            <label class="text-xs font-bold text-gray-500 ml-1 mb-1 block">เลือกหมวดหมู่</label>
+                            <div class="flex flex-wrap gap-2">
+                                <label v-for="c in categories" :key="c.id" class="cursor-pointer px-3 py-1.5 rounded-lg border text-sm transition select-none" :class="newP.category_id === c.id ? 'bg-orange-500 text-white border-orange-600 shadow' : 'bg-white text-gray-600 hover:bg-gray-100'">
+                                    <input type="radio" :value="c.id" v-model="newP.category_id" class="hidden"> {{ c.name }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-4"><label class="text-xs font-bold text-gray-500 ml-1">รูปภาพ</label><input type="file" ref="fileInput" @change="handleFileUpload" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200"/></div>
+                        <button @click="addProduct" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-bold shadow-md transition transform active:scale-95">+ บันทึกเมนูใหม่</button>
+                    </div>
+
+                    <div class="overflow-y-auto max-h-[500px] pr-2">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 text-gray-500 sticky top-0 z-10">
+                                <tr><th class="text-left py-2 px-3">สินค้า</th><th class="text-right py-2 px-3">ราคา</th><th class="text-right py-2 px-3">จัดการ</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr v-for="p in products" :key="p.id" class="hover:bg-gray-50 transition group">
+                                    <td class="py-3 px-3 flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-200">
+                                            <img v-if="p.icon && p.icon.startsWith('/')" :src="'http://localhost:3000' + p.icon" class="w-full h-full object-cover">
+                                            <span v-else class="text-2xl">{{ p.icon }}</span>
+                                        </div>
+                                        <div><div class="font-bold text-gray-800">{{ p.name }}</div><div class="text-xs text-gray-400">{{ p.category_name }}</div></div>
+                                    </td>
+                                    <td class="text-right font-bold text-gray-700">{{ p.price }}.-</td>
+                                    <td class="text-right px-3">
+                                        <button @click="openDeleteModal('product', p.id, `ลบเมนู '${p.name}'?`)" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">❌</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 lg:col-span-5">
+                <div class="bg-white p-6 rounded-2xl shadow border border-gray-100 h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-green-700 flex items-center gap-2"><span>🔔</span> ออเดอร์ล่าสุด</h2>
+                        <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full animate-pulse">{{ orders.length }} รายการ</span>
+                    </div>
+
+                    <div class="overflow-y-auto max-h-[800px] flex-1 space-y-4 pr-1">
+                        <div v-for="o in orders" :key="o.id" class="border border-green-200 rounded-xl p-4 bg-green-50/50 hover:shadow-md transition duration-300">
+                            <div class="flex justify-between items-start mb-3 border-b border-green-200 pb-2">
+                                <div><span class="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">Queue #{{ o.id }}</span><span class="text-xs text-gray-500 ml-2">🕒 {{ formatTime(o.created_at) }}</span></div>
+                                <div class="text-xl font-extrabold text-green-700">{{ (Number(o.total) || 0).toLocaleString() }}.-</div>
+                            </div>
+                            <div class="space-y-2 mb-4">
+                                <div v-for="item in o.items" class="flex justify-between items-center text-sm bg-white p-2 rounded-lg border border-green-100">
+    <div class="flex items-center gap-2">
+        <div class="font-bold text-gray-700">{{ item.name }}</div>
+        
+        <span v-if="item.sweetness" class="text-[10px] text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">
+            หวาน {{ item.sweetness }}
+        </span>
+
+        <span class="text-xs text-gray-400 bg-gray-100 px-1.5 rounded">
+            x{{ item.qty || item.quantity || 1 }}
+        </span>
+    </div>
+
+    <div class="text-gray-500 font-medium">
+        {{ ((Number(item.price)||0) * (Number(item.qty || item.quantity)||1)).toLocaleString() }}
+    </div>
+</div>
+                            </div>
+                            <div class="flex justify-end pt-2 border-t border-green-200/50">
+                                <button @click="openDeleteModal('order', o.id, `ต้องการลบออเดอร์ Queue #${o.id}?`)" class="text-xs font-bold text-red-500 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 hover:border-red-400 transition flex items-center gap-1">
+                                    ❌ ลบออเดอร์
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="orders.length === 0" class="flex flex-col items-center justify-center h-48 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl"><span class="text-4xl mb-2 opacity-50">😴</span><p class="text-sm">ยังไม่มีออเดอร์เข้ามา</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        createApp({
+            data() {
+                return {
+                    categories: [], products: [], orders: [], dailySales: [],
+                    newP: { name: '', price: '', category_id: null, has_sweetness: false },
+                    newCatName: '', selectedFile: null, isLoggingOut: false,
+                    
+                    // ✅ ตัวแปรสำหรับ Modal ลบ
+                    showDeleteModal: false,
+                    deleteTargetId: null,
+                    deleteType: null, // 'product', 'category', 'order'
+                    deleteMessage: ''
+                }
+            },
+            computed: {
+                todayDate() { return new Date().toISOString().split('T')[0]; },
+                todayTotal() { const t = this.dailySales.find(d => d.sale_date === this.todayDate); return t ? (Number(t.total) || 0) : 0; },
+                todayOrdersCount() { return this.orders.filter(o => o.created_at && o.created_at.startsWith(this.todayDate)).length; }
+            },
+            methods: {
+                async loadData() {
+                    try {
+                        const [c, p, o, s] = await Promise.all([ 
+                            fetch('http://localhost:3000/categories').then(r=>r.json()), 
+                            fetch('http://localhost:3000/products').then(r=>r.json()), 
+                            fetch('http://localhost:3000/orders').then(r=>r.json()), 
+                            fetch('http://localhost:3000/daily-sales').then(r=>r.json()) 
+                        ]);
+                        this.categories = c; this.products = p; this.orders = o; this.dailySales = s;
+                    } catch (e) { console.error("Load Error:", e); }
+                },
+                formatDate(d) { if(!d) return '-'; const [y,m,da] = d.split('-'); return `${da}/${m}/${y}`; },
+                formatTime(d) { return new Date(d).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}); },
+                
+                async addCategory() { 
+                    if (!this.newCatName.trim()) return; 
+                    await fetch('http://localhost:3000/categories', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: this.newCatName }) }); 
+                    this.newCatName = ''; this.loadData(); 
+                },
+                async addProduct() {
+                    if (!this.newP.name || !this.newP.price || !this.newP.category_id) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+                    const f = new FormData();
+                    f.append('name', this.newP.name); f.append('price', this.newP.price);
+                    f.append('category_id', this.newP.category_id);
+                    f.append('has_sweetness', this.newP.has_sweetness);
+                    if(this.selectedFile) f.append('image', this.selectedFile); else f.append('icon', '☕');
+                    await fetch('http://localhost:3000/products', { method: 'POST', body: f });
+                    this.loadData();
+                    this.newP = { name: '', price: '', category_id: this.newP.category_id, has_sweetness: false };
+                    this.selectedFile = null; this.$refs.fileInput.value = '';
+                },
+                handleFileUpload(e) { this.selectedFile = e.target.files[0]; },
+
+                // ✅ 1. ฟังก์ชันเปิด Modal
+                openDeleteModal(type, id, message) {
+                    this.deleteType = type;
+                    this.deleteTargetId = id;
+                    this.deleteMessage = message;
+                    this.showDeleteModal = true;
+                },
+
+                // ✅ 2. ฟังก์ชันยืนยันลบ (ทำงานเมื่อกดปุ่มแดงใน Modal)
+                async processDelete() {
+                    let url = '';
+                    if (this.deleteType === 'product') url = `http://localhost:3000/products/${this.deleteTargetId}`;
+                    else if (this.deleteType === 'category') url = `http://localhost:3000/categories/${this.deleteTargetId}`;
+                    else if (this.deleteType === 'order') url = `http://localhost:3000/orders/${this.deleteTargetId}`;
+
+                    if (url) {
+                        try {
+                            await fetch(url, { method: 'DELETE' });
+                            this.loadData(); // รีโหลดข้อมูล
+                        } catch (e) { alert("เกิดข้อผิดพลาดในการลบ"); }
+                    }
+                    this.showDeleteModal = false; // ปิด Modal
+                },
+
+                logout() { this.isLoggingOut = true; setTimeout(() => window.location.href = 'login.html', 1500); }
+            },
+            mounted() { this.loadData(); setInterval(this.loadData, 3000); }
+        }).mount('#app')
+    </script>
+</body>
+</html>

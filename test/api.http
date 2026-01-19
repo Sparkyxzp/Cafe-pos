@@ -1,0 +1,10 @@
+POST http://localhost:3000/checkout
+Content-Type: application/json
+
+{
+  "order_items": [
+    { "id": "d1", "qty": 2 },
+    { "id": "s2", "qty": 1 }
+  ],
+  "cash_received": 200
+}

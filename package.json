@@ -1,0 +1,17 @@
+{
+  "name": "cafe-pos-api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.4.1",
+    "@elysiajs/static": "^1.4.7",
+    "elysia": "^1.4.22"
+  }
+}
