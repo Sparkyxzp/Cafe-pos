@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Secure</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -16,21 +16,150 @@
         }
         .modal-box { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
         
-        .loader-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .loader { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid #f97316; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* =========================================
+           ☕ NEW COFFEE LOADER (Uiverse.io)
+           ========================================= */
+        .loader-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .loader {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            animation: shake 3s infinite ease-in-out;
+        }
+
+        .cup {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 30px;
+            background-color: #5b4022cb;
+            border: 1px solid #2e2e2e;
+            border-radius: 3px 3px 10px 10px;
+            z-index: 1;
+            animation: cupPulse 6s infinite ease-in-out;
+        }
+
+        .cup::before {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            width: calc(100% - 2px);
+            height: 6px;
+            background: #5b4022cb;
+            border: 1px solid #2e2e2e;
+            border-top: none;
+            border-radius: 50%;
+            z-index: -1;
+            animation: cupPulse 6s infinite ease-in-out;
+        }
+
+        .cup::after {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: 1px;
+            width: calc(100% - 2px);
+            height: 4px;
+            background: #da8920ca;
+            border: 1px solid #2e2e2e;
+            border-radius: 50%;
+            animation: coffeeGlow 6s infinite ease-in-out;
+        }
+
+        .cup-handle {
+            position: absolute;
+            top: 5px;
+            right: -10px;
+            width: 10px;
+            height: 15px;
+            border: 2px solid #2e2e2e;
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            background: transparent;
+        }
+
+        .smoke {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            width: 10px;
+            height: 25px;
+            background: rgba(72, 67, 67, 0.501);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            animation: rise 3s infinite ease-in-out;
+            filter: blur(8px);
+        }
+
+        .smoke.one { animation-delay: 0s; }
+        .smoke.two { animation-delay: 0.8s; }
+        .smoke.three { animation-delay: 1.6s; }
+
+        .load {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #2e2e2e;
+            opacity: 0.6;
+            font-weight: bold;
+            width: 150px;
+            text-align: center;
+        }
+
+        @keyframes rise {
+            0% { transform: translate(-50%, 0) scale(0.4); opacity: 0; }
+            30% { opacity: 0.7; }
+            60% { opacity: 0.4; }
+            100% { transform: translate(-50%, -120px) scale(1); opacity: 0; }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0) translateY(0) rotate(0); }
+            25% { transform: translateX(-4px) translateY(-2px) rotate(-2deg); }
+            50% { transform: translateX(0) translateY(0) rotate(0); }
+            75% { transform: translateX(4px) translateY(-2px) rotate(2deg); }
+            100% { transform: translateX(0) translateY(0) rotate(0); }
+        }
+
+        @keyframes cupPulse {
+            0%, 100% { background-color: #5b4022cb; }
+            50% { background-color: #f5f5f5bd; }
+        }
+
+        @keyframes coffeeGlow {
+            0%, 100% { background: #da8920ca; }
+            50% { background: #fed197d5; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-6">
+<body class="bg-gray-100 p-6">
     <div id="app" class="max-w-7xl mx-auto space-y-6">
         
         <div v-if="isLoggingOut" class="loader-overlay">
-            <div class="loader"></div>
-            <div class="mt-4 font-bold text-orange-600 text-lg">กำลังออกจากระบบ...</div>
+            <div class="loader">
+                <div class="cup">
+                    <div class="cup-handle"></div>
+                    <div class="smoke one"></div>
+                    <div class="smoke two"></div>
+                    <div class="smoke three"></div>
+                </div>
+                <div class="load">กำลังออกจากระบบ...</div>
+            </div>
         </div>
 
         <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -57,7 +186,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center bg-white p-5 rounded-2xl shadow-sm gap-4">
             <div>
                 <h1 class="text-3xl font-extrabold text-gray-800 flex items-center gap-2">☕ Admin Dashboard</h1>
-                <p class="text-xs text-gray-400 mt-1">จัดการร้านกาแฟของคุณได้ที่นี่</p>
+                <p class="text-xs text-gray-400 mt-1">จัดการร้านกาแฟของคุณได้ที่นี่ (Secure Mode)</p>
             </div>
             <button @click="logout" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow transition hover:shadow-lg flex items-center gap-2">
                 <span>🚪</span> ออกจากระบบ
@@ -73,24 +202,23 @@
                         <span>🛒</span> {{ todayOrdersCount }} ออเดอร์
                     </div>
                 </div>
-                <div class="absolute -right-4 -bottom-4 text-9xl opacity-10 group-hover:scale-110 transition duration-500">💰</div>
             </div>
 
-            <div class="md:col-span-2 bg-white rounded-2xl shadow p-6 border border-gray-100 h-48 overflow-hidden flex flex-col">
-                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">📅 สรุปยอดขาย 7 วันล่าสุด</h3>
-                <div class="overflow-y-auto flex-1 pr-2">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-500 sticky top-0">
-                            <tr><th class="text-left py-2 px-3 rounded-l-lg">วันที่</th><th class="text-right py-2 px-3 rounded-r-lg">ยอดขายรวม</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="day in dailySales" :key="day.sale_date" class="border-b last:border-0 hover:bg-gray-50 transition">
-                                <td class="py-3 px-3 text-gray-600">{{ formatDate(day.sale_date) }}</td>
-                                <td class="py-3 px-3 text-right font-bold text-gray-800">{{ (Number(day.total) || 0).toLocaleString() }}.-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="md:col-span-2 bg-white rounded-2xl shadow p-6 border border-gray-100 h-40 overflow-y-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-gray-500 sticky top-0 bg-white">
+                            <th class="pb-2">วันที่</th>
+                            <th class="text-right pb-2">ยอดขายรวม</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="day in dailySales" :key="day.sale_date" class="border-b last:border-0 hover:bg-gray-50 transition">
+                            <td class="py-2 text-gray-600">{{ formatDate(day.sale_date) }}</td>
+                            <td class="py-2 text-right font-bold text-gray-800">{{ (Number(day.total) || 0).toLocaleString() }}.-</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -151,7 +279,7 @@
                                     </td>
                                     <td class="text-right font-bold text-gray-700">{{ p.price }}.-</td>
                                     <td class="text-right px-3">
-                                        <button @click="openDeleteModal('product', p.id, `ลบเมนู '${p.name}'?`)" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">❌</button>
+                                        <button @click="openDeleteModal('product', p.id, `ลบเมนู '${p.name}'?`)" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">🗑️</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -175,26 +303,17 @@
                             </div>
                             <div class="space-y-2 mb-4">
                                 <div v-for="item in o.items" class="flex justify-between items-center text-sm bg-white p-2 rounded-lg border border-green-100">
-    <div class="flex items-center gap-2">
-        <div class="font-bold text-gray-700">{{ item.name }}</div>
-        
-        <span v-if="item.sweetness" class="text-[10px] text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">
-            หวาน {{ item.sweetness }}
-        </span>
-
-        <span class="text-xs text-gray-400 bg-gray-100 px-1.5 rounded">
-            x{{ item.qty || item.quantity || 1 }}
-        </span>
-    </div>
-
-    <div class="text-gray-500 font-medium">
-        {{ ((Number(item.price)||0) * (Number(item.qty || item.quantity)||1)).toLocaleString() }}
-    </div>
-</div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="font-bold text-gray-700">{{ item.name }}</div>
+                                        <span v-if="item.sweetness" class="text-[10px] text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">หวาน {{ item.sweetness }}</span>
+                                        <span class="text-xs text-gray-400 bg-gray-100 px-1.5 rounded">x{{ item.qty || item.quantity || 1 }}</span>
+                                    </div>
+                                    <div class="text-gray-500 font-medium">{{ ((Number(item.price)||0) * (Number(item.qty || item.quantity)||1)).toLocaleString() }}</div>
+                                </div>
                             </div>
                             <div class="flex justify-end pt-2 border-t border-green-200/50">
                                 <button @click="openDeleteModal('order', o.id, `ต้องการลบออเดอร์ Queue #${o.id}?`)" class="text-xs font-bold text-red-500 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 hover:border-red-400 transition flex items-center gap-1">
-                                    ❌ ลบออเดอร์
+                                    🗑️ ลบออเดอร์
                                 </button>
                             </div>
                         </div>
@@ -213,12 +332,8 @@
                     categories: [], products: [], orders: [], dailySales: [],
                     newP: { name: '', price: '', category_id: null, has_sweetness: false },
                     newCatName: '', selectedFile: null, isLoggingOut: false,
-                    
-                    // ✅ ตัวแปรสำหรับ Modal ลบ
-                    showDeleteModal: false,
-                    deleteTargetId: null,
-                    deleteType: null, // 'product', 'category', 'order'
-                    deleteMessage: ''
+                    showDeleteModal: false, deleteTargetId: null, deleteType: null, deleteMessage: '',
+                    token: localStorage.getItem('adminToken') || ''
                 }
             },
             computed: {
@@ -227,15 +342,36 @@
                 todayOrdersCount() { return this.orders.filter(o => o.created_at && o.created_at.startsWith(this.todayDate)).length; }
             },
             methods: {
+                async fetchAuth(url, options = {}) {
+                    if (!this.token) { window.location.href = 'login.html'; return null; }
+                    const headers = options.headers || {};
+                    if (!(options.body instanceof FormData)) { headers['Content-Type'] = 'application/json'; }
+                    headers['Authorization'] = `Bearer ${this.token}`;
+
+                    try {
+                        const res = await fetch(url, { ...options, headers });
+                        if (res.status === 401) {
+                            alert("Session หมดอายุ กรุณาเข้าสู่ระบบใหม่");
+                            localStorage.removeItem('adminToken');
+                            window.location.href = 'login.html';
+                            return null;
+                        }
+                        return res;
+                    } catch (e) { console.error("Fetch Error:", e); return null; }
+                },
+
                 async loadData() {
                     try {
                         const [c, p, o, s] = await Promise.all([ 
-                            fetch('http://localhost:3000/categories').then(r=>r.json()), 
-                            fetch('http://localhost:3000/products').then(r=>r.json()), 
-                            fetch('http://localhost:3000/orders').then(r=>r.json()), 
-                            fetch('http://localhost:3000/daily-sales').then(r=>r.json()) 
+                            this.fetchAuth('http://localhost:3000/categories').then(r=>r?r.json():[]), 
+                            this.fetchAuth('http://localhost:3000/products').then(r=>r?r.json():[]), 
+                            this.fetchAuth('http://localhost:3000/orders').then(r=>r?r.json():[]), 
+                            this.fetchAuth('http://localhost:3000/daily-sales').then(r=>r?r.json():[]) 
                         ]);
-                        this.categories = c; this.products = p; this.orders = o; this.dailySales = s;
+                        if(c) this.categories = c; 
+                        if(p) this.products = p; 
+                        if(o) this.orders = o; 
+                        if(s) this.dailySales = s;
                     } catch (e) { console.error("Load Error:", e); }
                 },
                 formatDate(d) { if(!d) return '-'; const [y,m,da] = d.split('-'); return `${da}/${m}/${y}`; },
@@ -243,7 +379,10 @@
                 
                 async addCategory() { 
                     if (!this.newCatName.trim()) return; 
-                    await fetch('http://localhost:3000/categories', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: this.newCatName }) }); 
+                    await this.fetchAuth('http://localhost:3000/categories', { 
+                        method: 'POST', 
+                        body: JSON.stringify({ name: this.newCatName }) 
+                    }); 
                     this.newCatName = ''; this.loadData(); 
                 },
                 async addProduct() {
@@ -253,22 +392,19 @@
                     f.append('category_id', this.newP.category_id);
                     f.append('has_sweetness', this.newP.has_sweetness);
                     if(this.selectedFile) f.append('image', this.selectedFile); else f.append('icon', '☕');
-                    await fetch('http://localhost:3000/products', { method: 'POST', body: f });
+                    
+                    await this.fetchAuth('http://localhost:3000/products', { method: 'POST', body: f });
                     this.loadData();
                     this.newP = { name: '', price: '', category_id: this.newP.category_id, has_sweetness: false };
                     this.selectedFile = null; this.$refs.fileInput.value = '';
                 },
                 handleFileUpload(e) { this.selectedFile = e.target.files[0]; },
 
-                // ✅ 1. ฟังก์ชันเปิด Modal
                 openDeleteModal(type, id, message) {
-                    this.deleteType = type;
-                    this.deleteTargetId = id;
-                    this.deleteMessage = message;
+                    this.deleteType = type; this.deleteTargetId = id; this.deleteMessage = message;
                     this.showDeleteModal = true;
                 },
 
-                // ✅ 2. ฟังก์ชันยืนยันลบ (ทำงานเมื่อกดปุ่มแดงใน Modal)
                 async processDelete() {
                     let url = '';
                     if (this.deleteType === 'product') url = `http://localhost:3000/products/${this.deleteTargetId}`;
@@ -276,17 +412,26 @@
                     else if (this.deleteType === 'order') url = `http://localhost:3000/orders/${this.deleteTargetId}`;
 
                     if (url) {
-                        try {
-                            await fetch(url, { method: 'DELETE' });
-                            this.loadData(); // รีโหลดข้อมูล
-                        } catch (e) { alert("เกิดข้อผิดพลาดในการลบ"); }
+                        await this.fetchAuth(url, { method: 'DELETE' }); 
+                        this.loadData();
                     }
-                    this.showDeleteModal = false; // ปิด Modal
+                    this.showDeleteModal = false;
                 },
 
-                logout() { this.isLoggingOut = true; setTimeout(() => window.location.href = 'login.html', 1500); }
+                logout() { 
+                    this.isLoggingOut = true; 
+                    localStorage.removeItem('adminToken');
+                    setTimeout(() => window.location.href = 'login.html', 1500); 
+                }
             },
-            mounted() { this.loadData(); setInterval(this.loadData, 3000); }
+            mounted() { 
+                if(!this.token) {
+                    window.location.href = 'login.html';
+                } else {
+                    this.loadData(); 
+                    setInterval(this.loadData, 3000); 
+                }
+            }
         }).mount('#app')
     </script>
 </body>

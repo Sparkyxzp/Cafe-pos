@@ -159,7 +159,7 @@
                         return;
                     }
 
-                    // 3. ✅ ยิง API ไปถาม Server
+                    // 3. ✅ ยิง API ไปถาม Server (Secure Login)
                     try {
                         const response = await fetch('http://localhost:3000/login', {
                             method: 'POST',
@@ -173,7 +173,12 @@
                         const result = await response.json();
 
                         if (result.success) {
-                            // รหัสถูกต้อง
+                            // 🔑 สำคัญ: บันทึก Token ลงเครื่อง!
+                            if (result.token) {
+                                localStorage.setItem('adminToken', result.token);
+                            }
+                            
+                            // รหัสถูกต้อง -> ไปหน้า Admin
                             this.startLoading('admin.html');
                         } else {
                             // รหัสผิดพลาด
