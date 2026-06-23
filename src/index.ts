@@ -28,9 +28,9 @@ db.run(`CREATE TABLE IF NOT EXISTS orders (
 )`);
 
 // ✅ สร้าง User: Admin (รหัส: 1722)
-if (!db.query("SELECT * FROM users WHERE username = 'Admin'").get()) {
-    db.run("INSERT INTO users (username, password) VALUES ('Admin', '1722')");
-    console.log("👤 Admin Created: Admin");
+if (!db.query("SELECT * FROM users WHERE username = 'admin'").get()) {
+    db.run("INSERT INTO users (username, password) VALUES ('admin', '1234')");
+    console.log("👤 Admin Created: admin");
 }
 
 // 🔐 Middleware ตรวจสอบ Token
